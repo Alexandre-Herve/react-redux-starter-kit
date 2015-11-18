@@ -1,11 +1,38 @@
 import path from 'path';
 import debug from 'debug';
-import mount from 'koa-mount';
 
 import koa from 'koa';
+import hbs from 'koa-hbs';
+import mount from 'koa-mount';
+import helmet from 'koa-helmet';
+import logger from 'koa-logger';
+import favicon from 'koa-favicon';
+import staticCache from 'koa-static-cache';
+import responseTime from 'koa-response-time';
+import Router from 'koa-router';
+
+import router from './router';
 
 const app = koa();
 const env = process.env.NODE_ENV || 'development';
+
+// add header `X-Response-Time`
+app.use(responseTime());
+app.use(logger());
+
+// various security headers
+app.use(helmet());
+
+if (env === 'production') {
+  // set debug env to `koa` only
+  // must be set programmaticaly for windows
+  debug.enable('koa');
+
+  // load production middleware
+  app.use(require('koa-conditional-get')());
+  app.use(require('koa-etag')());
+  app.use(require('koa-compressor')());
+}
 
 if (env === 'development') {
   // set debug env, must be programmaticaly for windows
@@ -14,11 +41,22 @@ if (env === 'development') {
   require('blocked')((ms) => debug('koa')(`blocked for ${ms}ms`));
 }
 
+app.use(favicon(path.join(__dirname, '../src/images/favicon.ico')));
+
+app.use(hbs.middleware({
+  defaultLayout: 'index',
+  layoutsPath: path.join(__dirname, '/views/layouts'),
+  viewPath: path.join(__dirname, '/views')
+}));
+
+const cacheOpts = { maxAge: 86400000, gzip: true };
+
 // Proxy asset folder to webpack development server in development mode
 if (env === 'development') {
-  const webpackConfig = require('./../webpack.config');
+  const webpackConfig = require('../webpack.config');
+  const config = require('../config');
   const proxy = require('koa-proxy')({
-    host: 'http://0.0.0.0:' + process.env.PORT,
+    host: 'http://0.0.0.0:' + config.get('server_config').port,
     map: (filePath) => 'assets/' + filePath
   });
   app.use(mount('/assets', proxy));
@@ -26,9 +64,7 @@ if (env === 'development') {
   app.use(mount('/assets', staticCache(path.join(__dirname, '../dist'), cacheOpts)));
 }
 
-app.use(function* (){
-  this.body = 'salut hehe';
-});
+app.use(router);
 
 app.listen(parseInt(process.env.PORT, 10) || 3000);
 
