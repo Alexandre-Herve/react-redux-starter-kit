@@ -20,6 +20,12 @@ webpackConfig.plugins.push(
       'unused'    : true,
       'dead_code' : true
     }
+  }),
+  new webpack.DefinePlugin({
+    'process.env': {
+      BROWSER: JSON.stringify(true),
+      NODE_ENV: JSON.stringify('production')
+    }
   })
 );
 

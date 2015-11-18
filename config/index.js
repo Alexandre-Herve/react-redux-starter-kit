@@ -10,7 +10,6 @@ import webpack from 'webpack';
 dotenv.load();
 const config = new Map();
 
-
 // ------------------------------------
 // Dev Server Configuration
 // ------------------------------------
@@ -101,46 +100,45 @@ config.set('globals', {
 // ------------------------------------
 // Webpack
 // ------------------------------------
-config.set('webpack_public_path',
-           `http://${config.get('webpack_host')}:${config.get('webpack_port')}/`
-          );
+config.set('webpack_public_path', `//${HOST}:${PORT}/__webpack_hmr`);
 
-          // ------------------------------------
-          // Project
-          // ------------------------------------
-          config.set('path_project', path.resolve(__dirname, '../'));
+// ------------------------------------
+// Project
+// ------------------------------------
+config.set('path_project', path.resolve(__dirname, '../'));
 
-          // ------------------------------------
-          // Utilities
-          // ------------------------------------
-          const paths = (() => {
-            const base    = [config.get('path_project')];
-            const resolve = path.resolve;
+// ------------------------------------
+// Utilities
+// ------------------------------------
+const paths = (() => {
+  const base    = [config.get('path_project')];
+  const resolve = path.resolve;
 
-            const project = (...args) => resolve.apply(resolve, [...base, ...args]);
+  const project = (...args) => resolve.apply(resolve, [...base, ...args]);
 
-            return {
-              project : project,
-              src     : project.bind(null, config.get('dir_src')),
-              dist    : project.bind(null, config.get('dir_dist'))
-            };
-          })();
+  return {
+    project : project,
+    src     : project.bind(null, config.get('dir_src')),
+    dist    : project.bind(null, config.get('dir_dist'))
+  };
+})();
 
-          config.set('utils_paths', paths);
-          config.set('utils_aliases', [
-            'actions',
-            'components',
-            'constants',
-            'containers',
-            'layouts',
-            'reducers',
-            'routes',
-            'services',
-            'store',
-            'styles',
-            'utils',
-            'views'
-          ].reduce((acc, dir) => ((acc[dir] = paths.src(dir)) && acc), {}));
+config.set('utils_paths', paths);
+config.set('utils_aliases', [
+  'middleware',
+  'actions',
+  'components',
+  'constants',
+  'containers',
+  'layouts',
+  'reducers',
+  'routes',
+  'services',
+  'store',
+  'styles',
+  'utils',
+  'views'
+].reduce((acc, dir) => ((acc[dir] = paths.src(dir)) && acc), {}));
 
-          export default config;
-          /* eslint-enable */
+export default config;
+/* eslint-enable */

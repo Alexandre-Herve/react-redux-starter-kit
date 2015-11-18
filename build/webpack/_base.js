@@ -1,6 +1,7 @@
 import webpack           from 'webpack';
 import config            from '../../config';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import writeStats        from './utils/write-stats';
 
 const paths = config.get('utils_paths');
 
@@ -14,20 +15,18 @@ const webpackConfig = {
     vendor : config.get('vendor_dependencies')
   },
   output : {
-    filename   : '[name].js',
+    filename   : '[name]-[hash].js',
+    chunkFilename: '[name]-[hash].js',
     path       : paths.project(config.get('dir_dist')),
-    publicPath : '/'
+    publicPath : '/assets/'
   },
   plugins : [
     new webpack.DefinePlugin(config.get('globals')),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.optimize.DedupePlugin(),
-    new HtmlWebpackPlugin({
-      template : paths.src('index.html'),
-      hash     : true,
-      filename : 'index.html',
-      inject   : 'body'
-    })
+
+    // write webpack stats
+    function() { this.plugin('done', writeStats); }
   ],
   resolve : {
     extensions : ['', '.js', '.jsx'],
@@ -84,9 +83,10 @@ const webpackConfig = {
 // to include the vendor bundle that webpack creates, so to get around that
 // we remove the bundle splitting when webpack is used with Karma.
 const commonChunkPlugin = new webpack.optimize.CommonsChunkPlugin(
-  'vendor', '[name].js'
+  'vendor', '[name]-[hash].js'
 );
 commonChunkPlugin.__KARMA_IGNORE__ = true;
-webpackConfig.plugins.push(commonChunkPlugin);
+// TODO: reactivate this
+// webpackConfig.plugins.push(commonChunkPlugin);
 
 export default webpackConfig;

@@ -6,13 +6,19 @@ import startKoa      from './utils/start-koa';
 webpackConfig.devtool = 'source-map';
 
 webpackConfig.entry.app.push(
-  `webpack-dev-server/client?${config.get('webpack_public_path')}`,
+  `webpack-hot-middleware/client?path=${config.get('webpack_public_path')}`,
   `webpack/hot/dev-server`
 );
 
 webpackConfig.plugins.push(
   new webpack.HotModuleReplacementPlugin(),
   new webpack.NoErrorsPlugin(),
+  new webpack.DefinePlugin({
+    'process.env': {
+      BROWSER: JSON.stringify(true),
+      NODE_ENV: JSON.stringify('development')
+    }
+  }),
   function() { this.plugin('done', startKoa); }
 );
 
