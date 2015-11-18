@@ -4,9 +4,39 @@ import { argv } from 'yargs';
 import dotenv   from 'dotenv';
 import chalk    from 'chalk';
 import pkg      from '../package.json';
+import { isArray } from 'lodash';
+import webpack from 'webpack';
 
 dotenv.load();
 const config = new Map();
+
+
+// ------------------------------------
+// Dev Server Configuration
+// ------------------------------------
+const { VIRTUAL_HOST, C9_HOSTNAME } = process.env;
+const LOCAL_IP = require('dev-ip')();
+const PORT = (C9_HOSTNAME) ? '443' : parseInt(process.env.PORT, 10) + 1 || 3001;
+const HOST = VIRTUAL_HOST || C9_HOSTNAME || isArray(LOCAL_IP) && LOCAL_IP[0] || LOCAL_IP || 'localhost';
+const PUBLIC_PATH = `//${HOST}:${PORT}/assets/`;
+
+config.set('server_config', {
+  port: PORT,
+  options: {
+    publicPath: (C9_HOSTNAME) ? '/' : PUBLIC_PATH,
+    hot: true,
+    stats: {
+      assets: true,
+      colors: true,
+      version: false,
+      hash: false,
+      timings: true,
+      chunks: false,
+      chunkModules: false
+    }
+  }
+});
+
 
 // ------------------------------------
 // User Configuration
@@ -40,19 +70,19 @@ config.set('vendor_dependencies', [
 
   console.log(chalk.yellow(
     `Package "${dep}" was not found as an npm dependency and won't be ` +
-    `included in the vendor bundle.\n` +
-    `Consider removing it from vendor_dependencies in ~/config/index.js`
+      `included in the vendor bundle.\n` +
+      `Consider removing it from vendor_dependencies in ~/config/index.js`
   ));
 }));
 
 /*  *********************************************
--------------------------------------------------
+    -------------------------------------------------
 
-All Internal Configuration Below
-Edit at Your Own Risk
+    All Internal Configuration Below
+    Edit at Your Own Risk
 
--------------------------------------------------
-************************************************/
+    -------------------------------------------------
+ ************************************************/
 // ------------------------------------
 // Environment
 // ------------------------------------
@@ -72,45 +102,45 @@ config.set('globals', {
 // Webpack
 // ------------------------------------
 config.set('webpack_public_path',
-  `http://${config.get('webpack_host')}:${config.get('webpack_port')}/`
-);
+           `http://${config.get('webpack_host')}:${config.get('webpack_port')}/`
+          );
 
-// ------------------------------------
-// Project
-// ------------------------------------
-config.set('path_project', path.resolve(__dirname, '../'));
+          // ------------------------------------
+          // Project
+          // ------------------------------------
+          config.set('path_project', path.resolve(__dirname, '../'));
 
-// ------------------------------------
-// Utilities
-// ------------------------------------
-const paths = (() => {
-  const base    = [config.get('path_project')];
-  const resolve = path.resolve;
+          // ------------------------------------
+          // Utilities
+          // ------------------------------------
+          const paths = (() => {
+            const base    = [config.get('path_project')];
+            const resolve = path.resolve;
 
-  const project = (...args) => resolve.apply(resolve, [...base, ...args]);
+            const project = (...args) => resolve.apply(resolve, [...base, ...args]);
 
-  return {
-    project : project,
-    src     : project.bind(null, config.get('dir_src')),
-    dist    : project.bind(null, config.get('dir_dist'))
-  };
-})();
+            return {
+              project : project,
+              src     : project.bind(null, config.get('dir_src')),
+              dist    : project.bind(null, config.get('dir_dist'))
+            };
+          })();
 
-config.set('utils_paths', paths);
-config.set('utils_aliases', [
-  'actions',
-  'components',
-  'constants',
-  'containers',
-  'layouts',
-  'reducers',
-  'routes',
-  'services',
-  'store',
-  'styles',
-  'utils',
-  'views'
-].reduce((acc, dir) => ((acc[dir] = paths.src(dir)) && acc), {}));
+          config.set('utils_paths', paths);
+          config.set('utils_aliases', [
+            'actions',
+            'components',
+            'constants',
+            'containers',
+            'layouts',
+            'reducers',
+            'routes',
+            'services',
+            'store',
+            'styles',
+            'utils',
+            'views'
+          ].reduce((acc, dir) => ((acc[dir] = paths.src(dir)) && acc), {}));
 
-export default config;
-/* eslint-enable */
+          export default config;
+          /* eslint-enable */

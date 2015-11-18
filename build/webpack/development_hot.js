@@ -1,6 +1,9 @@
 import webpack       from 'webpack';
 import config        from '../../config';
 import webpackConfig from './development';
+import startKoa      from './utils/start-koa';
+
+webpackConfig.devtool = 'source-map';
 
 webpackConfig.entry.app.push(
   `webpack-dev-server/client?${config.get('webpack_public_path')}`,
@@ -9,7 +12,8 @@ webpackConfig.entry.app.push(
 
 webpackConfig.plugins.push(
   new webpack.HotModuleReplacementPlugin(),
-  new webpack.NoErrorsPlugin()
+  new webpack.NoErrorsPlugin(),
+  function() { this.plugin('done', startKoa); }
 );
 
 // We need to apply the react-transform HMR plugin to the Babel configuration,
